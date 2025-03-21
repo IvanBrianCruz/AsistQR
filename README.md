@@ -1,6 +1,6 @@
 # AsistQR
 
-![AsistQR Logo](https://raw.githubusercontent.com/IvanBrianCruz/Uber_Clon/refs/heads/master/src/main/resources/static/img/banner-github.png?) 
+![AsistQR Logo](https://raw.githubusercontent.com/IvanBrianCruz/AsistQR/refs/heads/master/img/banner.png?) 
 
 **AsistQR** es una aplicación de escritorio para Windows que permite registrar la asistencia de personas mediante la lectura de códigos QR. Una vez registrado el QR, la app almacena los datos con la fecha y hora exacta de la asistencia. Al finalizar, es posible exportar el listado de asistencia en un archivo Excel que incluye los datos como nombre, apellido, fecha y hora.
 
@@ -24,5 +24,4 @@
 
 1. **Descarga el programa para windows:**
 
-
-
+[Descargar archivo](https://drive.google.com/uc?export=download&id=1-zIHorszGMxUOGEmdu4UcqOnSUa4i91_)
