@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner QR </title>
+    <script src="js/jsQR.js"></script>
+    <script src="js/exel.js"></script>
+    <link href="js/css.css" rel="stylesheet">
+    <link rel="icon" href="img/atlas.ico" type="image/x-icon">
+
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: url('img/fondo.png') no-repeat center center fixed; 
+    background-size: cover; /* Asegura que la imagen cubra toda la pantalla */
+    color: #000000; /* Color de texto blanco para que contraste con el fondo */
+    text-align: center;
+}
+
+video {
+    border: 2px solid #ccc;
+    margin-bottom: 20px;
+    border-radius: 10px;
+}
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            text-align: center;
+        }
+        h1,span {
+            color: #e2e2e2;
+        }
+        p {
+            color: #e2e2e2;
+        }
+        video, canvas {
+            border: 2px solid #ccc;
+            margin-bottom: 20px;
+        }
+        #qr-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        #qr-list li {
+            background-color: #ffffff;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: left;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Escanear QR para registrar tu asistencia</h1>
+    <video id="video" width="600" height="400" autoplay></video>
+    <canvas id="canvas" style="display:none;"></canvas> <!-- No mostrar el canvas -->
+    
+    <p id="result">Escanea un código QR</p>
+    <ul id="qr-list"></ul>
+
+    <button id="exportBtn" style="display:none;">Exportar a Excel</button>
+
+    <script>
+        // Usamos un Set para almacenar los códigos QR escaneados y evitar duplicados
+        let scannedQRSet = new Set();
+
+        // Lista para almacenar los datos escaneados con fecha y hora
+        let qrDataList = [];
+
+        // Acceder a la cámara
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                var video = document.getElementById('video');
+                video.srcObject = stream;
+                video.play();
+            })
+            .catch(function(err) {
+                console.log("No se pudo acceder a la cámara: " + err);
+            });
+
+        // Capturar y procesar el video en el canvas para escanear QR
+        function scanQRCode() {
+            var video = document.getElementById('video');
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+
+            // Dibujar el contenido del video en el canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Obtener la imagen del canvas
+            var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            var code = jsQR(imageData.data, canvas.width, canvas.height);
+
+            // Mostrar el resultado
+            if (code) {
+                document.getElementById('result').textContent = 'Código QR detectado: ' + code.data;
+
+                // Verificar si el QR ya ha sido escaneado antes
+                if (!scannedQRSet.has(code.data)) {
+                    // Si no está en el Set, lo agregamos al Set y a la lista
+                    let date = new Date();
+                    let dateString = date.toLocaleDateString();
+                    let timeString = date.toLocaleTimeString();
+
+                    scannedQRSet.add(code.data);  // Agregar al Set para evitar duplicados
+
+                    // Guardar el QR con la fecha y hora en la lista
+                    qrDataList.push({
+                        fecha: dateString,
+                        hora: timeString,
+                        dato: code.data
+                    });
+
+                    // Mostrar la lista de datos escaneados
+                    displayQRList();
+
+                    // Mostrar el botón para exportar solo después de escanear al menos un código
+                    document.getElementById('exportBtn').style.display = 'inline';
+                }
+            } else {
+                document.getElementById('result').textContent = 'Escanea un código QR';
+            }
+
+            // Llamar nuevamente para continuar el escaneo
+            requestAnimationFrame(scanQRCode);
+        }
+
+        // Función para mostrar la lista de datos escaneados
+        function displayQRList() {
+            let qrListElement = document.getElementById('qr-list');
+            qrListElement.innerHTML = ''; // Limpiar la lista
+
+            qrDataList.forEach(item => {
+                let li = document.createElement('li');
+                li.textContent = `${item.fecha} - ${item.hora} - ${item.dato}`;
+                qrListElement.appendChild(li);
+            });
+        }
+
+        // Función para exportar los datos a Excel
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Datos QR');
+
+            // Crear encabezados de columna
+            worksheet.columns = [
+                { header: 'Fecha', key: 'fecha', width: 15 },
+                { header: 'Hora', key: 'hora', width: 10 },
+                { header: 'Dato del QR', key: 'dato', width: 30 }
+            ];
+
+            // Agregar los datos de la lista
+            qrDataList.forEach(item => {
+                worksheet.addRow({ fecha: item.fecha, hora: item.hora, dato: item.dato });
+            });
+
+            // Guardar el archivo Excel
+            workbook.xlsx.writeBuffer().then(function(data) {
+                const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'datos_qr.xlsx';
+                a.click();
+            }).catch(function(err) {
+                console.error('Error al exportar a Excel: ', err);
+            });
+        });
+
+        // Iniciar el escaneo
+        scanQRCode();
+    </script>
+
+       
+   <!-- Footer -->
+<footer >
+    <p>Hecho por <strong>Atlas</strong> | Desarrollado por <strong>Cruz Iván Brian - Full Stack Tech Developer</strong> | 2024</p>
+    <p>Para mas informacion: EMAIL: ivan4912134@gmail.com   TEL:3884211576</p>
+    <div class="d-flex justify-content-center align-items-center">
+  
+        <img src="./img/atlas.png" alt="Logo Atlas" style="width: 50px; height: 50px;">
+    </div>
+
+
+    <div class="footer-content-container">
+        <span class="menu-titulo">Síguenos :</span>
+        <div class="footer-content-social">
+            <a href="https://x.com/IvanBrian49?t=OoMAzIuEHzOzETzKqN31PA&s=09" class="social-footer">🐦</a>
+            <a href="https://www.facebook.com/share/17s8cJbF1n/" class="social-footer">📘</a>
+            <a href="https://chat.whatsapp.com/Bg7AfwgEvoiFvSxENXjvJT" class="social-footer">📱</a>
+            <a href="https://www.linkedin.com/in/ivan-cruz-7a42b4173?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" class="social-footer">🔗</a>
+        </div>
+    </div>
+    
+
+</div>
+<div class="copyright-container"> 
+ <span class="copyright"> © Copyright; Todos los derechos reservados, 2024.</span>
+</div>
+</footer>
+</body>
+</html>

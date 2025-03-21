@@ -1,0 +1,70 @@
+{
+  "name": "asistqr",
+  "version": "1.0.0",
+  "description": "Aplicación para el control de asistencia mediante códigos QR",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "electron",
+    "AsistQR",
+    "qr"
+  ],
+  "author": "ATLAS - desarrollado por: Ivan Cruz",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "asistqr": "file:",
+    "exceljs": "^4.4.0",
+    "jsqr": "^1.4.0"
+  },
+  "build": {
+    "appId": "com.asistencia.qr",
+    "productName": "AsistQR",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "img/**/*",
+      "js/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "img/atlas.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AsistQR"
+    },
+    "extraResources": [
+      {
+        "from": "./resources/",
+        "to": "resources/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true
+  }
+}
